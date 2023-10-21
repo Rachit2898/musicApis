@@ -3,6 +3,7 @@ const { User } = require("../models/user");
 const { Song, validate } = require("../models/song");
 const auth = require("../middleware/auth");
 const admin = require("../middleware/admin");
+const cloudinary = require("../middleware/cloudinary");
 const validateObjectId = require("../middleware/validateObjectId");
 const multer = require("multer");
 
@@ -27,17 +28,26 @@ router.post("/upload", admin, upload.single("songFile"), async (req, res) => {
     return res.status(400).send({ message: "Song file is required" });
   }
 
+  const uploader = async (path) => await cloudinary.uploads(path, "Songs");
+
+  const path = req.file.path;
+  const newPath = await uploader(path);
+
   const song = new Song({
     name: req.body.name,
     artist: req.body.artist,
-    songFile: req.file.path, // Store the file location
+    songFile: newPath.url,
     img: req.body.img,
     duration: req.body.duration,
+    song: req.body.song,
   });
 
   try {
     await song.save();
-    res.status(201).send({ data: song, message: "Song uploaded successfully" });
+    res.status(201).send({
+      data: song,
+      message: "Song uploaded successfully",
+    });
   } catch (err) {
     console.error("Error uploading song:", err);
     res.status(500).send({ message: "Internal Server Error" });

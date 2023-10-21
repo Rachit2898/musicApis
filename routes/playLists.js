@@ -12,6 +12,7 @@ router.post("/", auth, async (req, res) => {
   if (error) return res.status(400).send({ message: error.details[0].message });
 
   const user = await User.findById(req.user._id);
+  console.log(user);
   const playList = await PlayList({ ...req.body, user: user._id }).save();
   user.playlists.push(playList._id);
   await user.save();

@@ -15,6 +15,7 @@ module.exports = (req, res, next) => {
         return res.status(400).send({ message: "invalid token" });
       } else {
         req.user = validToken;
+        console.log(req.user);
         next();
       }
     }
