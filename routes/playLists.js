@@ -6,13 +6,47 @@ const auth = require("../middleware/auth");
 const validateObjectId = require("../middleware/validateObjectId");
 const Joi = require("joi");
 
-// create playlist
+/**
+ * @swagger
+ * tags:
+ *   name: Playlists
+ *   description: Playlist management APIs
+ */
+
+/**
+ * @swagger
+ * /playlists:
+ *   post:
+ *     summary: Create a new playlist
+ *     tags: [Playlists]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *             properties:
+ *               name:
+ *                 type: string
+ *               desc:
+ *                 type: string
+ *               img:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Playlist created
+ *       400:
+ *         description: Invalid input
+ */
 router.post("/", auth, async (req, res) => {
   const { error } = validate(req.body);
   if (error) return res.status(400).send({ message: error.details[0].message });
 
   const user = await User.findById(req.user._id);
-  console.log(user);
   const playList = await PlayList({ ...req.body, user: user._id }).save();
   user.playlists.push(playList._id);
   await user.save();
@@ -20,7 +54,102 @@ router.post("/", auth, async (req, res) => {
   res.status(201).send({ data: playList });
 });
 
-// edit playlist by id
+/**
+ * @swagger
+ * /playlists:
+ *   get:
+ *     summary: Get all playlists
+ *     tags: [Playlists]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of playlists
+ */
+router.get("/", auth, async (req, res) => {
+  const playlists = await PlayList.find();
+  res.status(200).send({ data: playlists });
+});
+
+/**
+ * @swagger
+ * /playlists/favourite:
+ *   get:
+ *     summary: Get playlists created by current user
+ *     tags: [Playlists]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of user's playlists
+ */
+router.get("/favourite", auth, async (req, res) => {
+  const user = await User.findById(req.user._id);
+  const playlists = await PlayList.find({ _id: user.playlists });
+  res.status(200).send({ data: playlists });
+});
+
+/**
+ * @swagger
+ * /playlists/{id}:
+ *   get:
+ *     summary: Get playlist by ID
+ *     tags: [Playlists]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Playlist details
+ *       404:
+ *         description: Not found
+ */
+router.get("/:id", [validateObjectId, auth], async (req, res) => {
+  const playlist = await PlayList.findById(req.params.id);
+  if (!playlist) return res.status(404).send("not found");
+
+  const songs = await Song.find({ _id: playlist.songs });
+  res.status(200).send({ data: { playlist, songs } });
+});
+
+/**
+ * @swagger
+ * /playlists/edit/{id}:
+ *   put:
+ *     summary: Edit a playlist by ID
+ *     tags: [Playlists]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               desc:
+ *                 type: string
+ *               img:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Playlist updated
+ *       403:
+ *         description: Not allowed
+ */
 router.put("/edit/:id", [validateObjectId, auth], async (req, res) => {
   const schema = Joi.object({
     name: Joi.string().required(),
@@ -45,7 +174,31 @@ router.put("/edit/:id", [validateObjectId, auth], async (req, res) => {
   res.status(200).send({ message: "Updated successfully" });
 });
 
-// add song to playlist
+/**
+ * @swagger
+ * /playlists/add-song:
+ *   put:
+ *     summary: Add a song to a playlist
+ *     tags: [Playlists]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - playlistId
+ *               - songId
+ *             properties:
+ *               playlistId:
+ *                 type: string
+ *               songId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Song added to playlist
+ */
 router.put("/add-song", auth, async (req, res) => {
   const schema = Joi.object({
     playlistId: Joi.string().required(),
@@ -66,7 +219,31 @@ router.put("/add-song", auth, async (req, res) => {
   res.status(200).send({ data: playlist, message: "Added to playlist" });
 });
 
-// remove song from playlist
+/**
+ * @swagger
+ * /playlists/remove-song:
+ *   put:
+ *     summary: Remove a song from a playlist
+ *     tags: [Playlists]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - playlistId
+ *               - songId
+ *             properties:
+ *               playlistId:
+ *                 type: string
+ *               songId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Song removed from playlist
+ */
 router.put("/remove-song", auth, async (req, res) => {
   const schema = Joi.object({
     playlistId: Joi.string().required(),
@@ -88,35 +265,26 @@ router.put("/remove-song", auth, async (req, res) => {
   res.status(200).send({ data: playlist, message: "Removed from playlist" });
 });
 
-// user playlists
-router.get("/favourite", auth, async (req, res) => {
-  const user = await User.findById(req.user._id);
-  const playlists = await PlayList.find({ _id: user.playlists });
-  res.status(200).send({ data: playlists });
-});
-
-// get random playlists
-router.get("/random", auth, async (req, res) => {
-  const playlists = await PlayList.aggregate([{ $sample: { size: 10 } }]);
-  res.status(200).send({ data: playlists });
-});
-
-// get playlist by id
-router.get("/:id", [validateObjectId, auth], async (req, res) => {
-  const playlist = await PlayList.findById(req.params.id);
-  if (!playlist) return res.status(404).send("not found");
-
-  const songs = await Song.find({ _id: playlist.songs });
-  res.status(200).send({ data: { playlist, songs } });
-});
-
-// get all playlists
-router.get("/", auth, async (req, res) => {
-  const playlists = await PlayList.find();
-  res.status(200).send({ data: playlists });
-});
-
-// delete playlist by id
+/**
+ * @swagger
+ * /playlists/{id}:
+ *   delete:
+ *     summary: Delete a playlist
+ *     tags: [Playlists]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Playlist deleted
+ *       403:
+ *         description: Not allowed
+ */
 router.delete("/:id", [validateObjectId, auth], async (req, res) => {
   const user = await User.findById(req.user._id);
   const playlist = await PlayList.findById(req.params.id);

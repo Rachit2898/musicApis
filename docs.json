@@ -1,0 +1,30 @@
+{
+  "name": "UponAI Docs",
+  "root": "./docs",
+  "theme": "mint",
+  "colors": {
+    "primary": "#6366f1"
+  },
+  "navigation": {
+    "anchors": [
+      {
+        "anchor": "Documentation",
+        "href": "/docs/index",
+        "icon": "book-open",
+        "pages": [
+          "docs/index",
+          "docs/auth",
+          "docs/users",
+          "docs/songs",
+          "docs/playlists",
+          "docs/search"
+        ]
+      },
+      {
+        "anchor": "API Reference",
+        "icon": "square-terminal",
+        "openapi": "docs/swagger-output.json"
+      }
+    ]
+  }
+}

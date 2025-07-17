@@ -1,4 +1,5 @@
 require("dotenv").config();
+const { swaggerUi, swaggerSpec } = require("./swagger");
 require("express-async-errors");
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -14,7 +15,7 @@ const app = express();
 
 // Initialize Multer with the correct field name
 const upload = multer({ dest: "uploads/", fieldName: "songFile" });
-
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 connection();
 app.use(cors());
 app.use(express.json());
@@ -38,5 +39,5 @@ app.use("/api/songs/", songRoutes);
 app.use("/api/playlists/", playListRoutes);
 app.use("/api/", searchRoutes);
 
-const port = 8080;
+const port = 3000;
 app.listen(port, () => console.log(`Listening on port ${port}...`));

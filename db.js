@@ -7,7 +7,7 @@ module.exports = async () => {
   };
   try {
     await mongoose.connect(
-      "mongodb+srv://rachit:1234@cluster0.qkhsycr.mongodb.net/musicApp",
+      "mongodb+srv://merachitt2898:177k8dBr2gnKTqgc@cluster0.buyr7.mongodb.net/musicApp",
       connectionParams
     );
     console.log("connected to database successfully");
